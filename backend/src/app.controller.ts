@@ -1,5 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { PrismaService } from './database/prisma.service';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { CurrentUser } from './auth/decorators/current-user.decorator';
 
 @Controller()
 export class AppController {
@@ -12,6 +14,16 @@ export class AppController {
     return {
       status: 'ok',
       database: 'connected',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('protected')
+  protectedRoute(@CurrentUser() user: unknown) {
+    return {
+      message: 'You are authenticated',
+      user,
     };
   }
 }
