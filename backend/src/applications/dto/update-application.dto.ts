@@ -1,12 +1,10 @@
 import {
-  IsEnum,
   IsInt,
   IsOptional,
   IsString,
   IsUrl,
   Min,
 } from 'class-validator';
-import { ApplicationStatus } from '../../generated/prisma/enums';
 
 export class UpdateApplicationDto {
   @IsOptional()
@@ -16,10 +14,6 @@ export class UpdateApplicationDto {
   @IsOptional()
   @IsString()
   position?: string;
-
-  @IsOptional()
-  @IsEnum(ApplicationStatus)
-  status?: ApplicationStatus;
 
   @IsOptional()
   @IsInt()

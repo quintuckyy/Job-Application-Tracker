@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { QueryApplicationsDto } from './dto/query-applications.dto';
+import { ApplicationStatus } from '../generated/prisma/enums';
+
 
 @Injectable()
 export class ApplicationsService {
@@ -126,6 +128,78 @@ export class ApplicationsService {
       where: {
         id,
       },
+    });
+  }
+
+  async updateStatus(
+    userId: string,
+    id: string,
+    newStatus: ApplicationStatus,
+  ) {
+    const application = await this.findOne(userId, id);
+
+    if (application.status === newStatus) {
+        throw new BadRequestException(
+        `Application is already ${newStatus}`,
+        );
+    }
+
+    if (application.status === ApplicationStatus.REJECTED) {
+        throw new BadRequestException(
+        'Rejected applications cannot change status',
+        );
+    }
+
+    const statusOrder: ApplicationStatus[] = [
+        ApplicationStatus.APPLIED,
+        ApplicationStatus.ASSESSMENT,
+        ApplicationStatus.INTERVIEW,
+        ApplicationStatus.OFFER,
+    ];
+
+    if (newStatus !== ApplicationStatus.REJECTED) {
+        const currentIndex = statusOrder.indexOf(application.status);
+        const newIndex = statusOrder.indexOf(newStatus);
+
+        if (newIndex <= currentIndex) {
+        throw new BadRequestException(
+            'Application status cannot move backwards',
+        );
+        }
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+        const updated = await tx.jobApplication.update({
+        where: {
+            id,
+        },
+        data: {
+            status: newStatus,
+        },
+        });
+
+        await tx.applicationHistory.create({
+        data: {
+            applicationId: id,
+            fromStatus: application.status,
+            toStatus: newStatus,
+        },
+        });
+
+        return updated;
+    });
+  }
+
+  async getHistory(userId: string, id: string) {
+    await this.findOne(userId, id);
+
+    return this.prisma.applicationHistory.findMany({
+        where: {
+        applicationId: id,
+        },
+        orderBy: {
+        changedAt: 'asc',
+        },
     });
   }
 }

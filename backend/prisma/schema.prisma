@@ -54,7 +54,25 @@ model JobApplication {
   userId String
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  history ApplicationHistory[]
+
   @@index([userId])
   @@index([status])
   @@map("job_applications")
+}
+
+model ApplicationHistory {
+  id String @id @default(uuid())
+
+  fromStatus ApplicationStatus?
+  toStatus   ApplicationStatus
+
+  changedAt DateTime @default(now())
+
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([changedAt])
+  @@map("application_history")
 }

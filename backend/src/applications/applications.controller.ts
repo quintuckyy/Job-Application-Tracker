@@ -16,6 +16,7 @@ import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { QueryApplicationsDto } from './dto/query-applications.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 
 type JwtUser = {
   sub: string;
@@ -68,4 +69,25 @@ export class ApplicationsController {
   ) {
     return this.applicationsService.remove(user.sub, id);
   }
+
+  @Patch(':id/status')
+    updateStatus(
+    @CurrentUser() user: JwtUser,
+    @Param('id') id: string,
+    @Body() dto: UpdateStatusDto,
+  ) {
+    return this.applicationsService.updateStatus(
+        user.sub,
+        id,
+        dto.status,
+    );
+  }
+
+  @Get(':id/history')
+  getHistory(
+   @CurrentUser() user: JwtUser,
+   @Param('id') id: string,
+  ) {
+    return this.applicationsService.getHistory(user.sub, id);
+ }
 }
