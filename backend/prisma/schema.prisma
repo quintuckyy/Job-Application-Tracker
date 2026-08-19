@@ -55,6 +55,8 @@ model JobApplication {
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   history ApplicationHistory[]
+  interviews Interview[]
+  notes      ApplicationNote[]
 
   @@index([userId])
   @@index([status])
@@ -75,4 +77,35 @@ model ApplicationHistory {
   @@index([applicationId])
   @@index([changedAt])
   @@map("application_history")
+}
+
+model Interview {
+  id        String   @id @default(uuid())
+  title     String
+  scheduledAt DateTime
+  location  String?
+  meetingUrl String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([scheduledAt])
+  @@map("interviews")
+}
+
+model ApplicationNote {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("application_notes")
 }
