@@ -24,36 +24,68 @@ export class ApplicationsService {
   }
 
   async findAll(userId: string, query: QueryApplicationsDto) {
-    const { page, limit } = query;
+    const {
+        page,
+        limit,
+        search,
+        status,
+        sortBy,
+        sortOrder,
+    } = query;
 
     const skip = (page - 1) * limit;
 
+    const where = {
+        userId,
+        ...(status ? { status } : {}),
+        ...(search
+        ? {
+            OR: [
+                {
+                company: {
+                    contains: search,
+                    mode: 'insensitive' as const,
+                },
+                },
+                {
+                position: {
+                    contains: search,
+                    mode: 'insensitive' as const,
+                },
+                },
+                {
+                location: {
+                    contains: search,
+                    mode: 'insensitive' as const,
+                },
+                },
+            ],
+            }
+        : {}),
+    };
+
     const [applications, total] = await this.prisma.$transaction([
-      this.prisma.jobApplication.findMany({
-        where: {
-          userId,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        this.prisma.jobApplication.findMany({
+        where,
         skip,
         take: limit,
-      }),
-      this.prisma.jobApplication.count({
-        where: {
-          userId,
+        orderBy: {
+            [sortBy]: sortOrder,
         },
-      }),
+        }),
+        this.prisma.jobApplication.count({
+        where,
+        }),
     ]);
 
     return {
-      data: applications,
-      meta: {
+        data: applications,
+        meta: {
         page,
         limit,
         total,
         totalPages: Math.ceil(total / limit),
-      },
+        },
     };
   }
 
